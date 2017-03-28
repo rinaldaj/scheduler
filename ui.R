@@ -6,7 +6,7 @@ library(DT)
 
 shinyUI(fluidPage(
 
-  # Application title
+  
   titlePanel("Schedule Generator"),
 
   
@@ -28,7 +28,7 @@ shinyUI(fluidPage(
 	)
     ),
 
-    # Show a plot of the generated distribution
+    
     mainPanel(
       dataTableOutput('schedule'),
       actionButton('swapClass','swap class')
