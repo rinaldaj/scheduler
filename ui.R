@@ -29,8 +29,19 @@ shinyUI(fluidPage(
 
     
     mainPanel(
-      dataTableOutput('schedule'),
-      actionButton('swapClass','swap class')
-    )
+      
+      tabsetPanel(
+      tabPanel("List View",
+        dataTableOutput('schedule'),
+        conditionalPanel(
+          "input.schedule_rows_selected != null",
+          dataTableOutput('otherClas'),
+          actionButton('swapClass','swap class')
+        )
+      ),
+      tabPanel("Calendar",dataTableOutput('calendar'))
+      )
+      
+      )
   )
 ))
