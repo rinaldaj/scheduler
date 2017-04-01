@@ -154,14 +154,24 @@ sortdb <- function(classes,db){
 	clasLeng = integer()
 	for(i in 1:length(db$subjCode)){
 		subNums = db[i,]
-		tmp = filter(classes,isWorthy(Subject,Catalog,subNums))
-		tmp = filter(tmp,(nchar(as.character(Meeting.Days)) > 1)) 
+		if(is.null(db$tpe)){
+		  tmp = filter(classes,isWorthy(Subject,Catalog,subNums))
+		  tmp = filter(tmp,(nchar(as.character(Meeting.Days)) > 1))
+		} else {
+		if(db$tpe[i] == 2)
+		  tmp <- filter(classes,isWorthy(Subject,Catalog,db[i,]),(nchar(as.character(Meeting.Days)) == 1),Etime -Stime < 1.5)
+		else if(db$tpe[i] == 1)
+		  tmp <- filter(classes,isWorthy(Subject,Catalog,db[i,]),(nchar(as.character(Meeting.Days)) == 1),Etime -Stime > 1.5)
+		else
+		  tmp <- filter(classes,isWorthy(Subject,Catalog,db[i,]),(nchar(as.character(Meeting.Days)) > 1))
+		}
 		clasLeng[i] = length(tmp$Meeting.Days)
 	}
 
 	#sorts into correct order
 	dv = cbind(clasLeng,db)
 	dv = dv[order(dv$clasLeng),]
+	print(dv)
 	dv$clasLeng <- NULL
 	row.names(dv)<-NULL
 	dv
@@ -173,38 +183,45 @@ makeSch <- function(class,db,sched = NULL){
 
 	#makes the schedule
 	#make list of classes that don't conflict with sched
-	print("starting big loop")
-	while(length(db$subjCode) > 0){
+	
+  
+  db2 = NULL	
+  for(i in 1:length(db$subjCode))
+  {
+  
+    lecture = filter(class,isWorthy(Subject,Catalog,db[i,]),(nchar(as.character(Meeting.Days)) > 1))
+    lab = filter(class,isWorthy(Subject,Catalog,db[i,]),(nchar(as.character(Meeting.Days)) == 1))
+    discussion = filter(lab, Etime -Stime < 1.5)
+    lab = filter(lab,Etime - Stime > 1.5)
+    
+    if(length(lecture$Stime) > 0){
+      db2 = rbind(db2,data.frame(subjCode = db$subjCode[i],courseNum = db$courseNum[i],tpe = 0,stringsAsFactors = FALSE ))
+    }
+    if(length(lab$Stime) > 0)
+      db2 = rbind(db2,data.frame(subjCode = db$subjCode[i],courseNum = db$courseNum[i],tpe = 1,stringsAsFactors = FALSE ))
+    if(length(discussion$Stime) > 0 )
+      db2 = rbind(db2,data.frame(subjCode = db$subjCode[i],courseNum = db$courseNum[i],tpe = 2,stringsAsFactors = FALSE ))
+  }
+  print("the Thing")
+  print(db2)
+  
+	while(length(db2$subjCode) > 0){
+	
 	classes = NULL
 	if(!is.null(sched)){
 		for(i in 1:length(class$Catalog)){
 			if(!conflicts(class[i,],sched))
 				classes = rbind(classes,class[i,])
 		}
-	}else
-		classes = class
-	print("starting generation of db2")
-	db2 = NULL	
-	for(i in 1:length(db$subjName))
-	{
-		lecture = filter(classes,isWorthy(Subject,Catalog,db[i,]),(nchar(as.character(Meeting.Days)) > 1))
-		lab = filter(classes,isWorthy(Subject,Catalog,db[i,]),(nchar(as.character(Meeting.Days)) == 1))
-		discussion = filter(lab, Etime -Stime > 1.5)
-		lab = filter(lab,Etime - Stime < 1.5)
-		print(db[1,])
-		if(length(lecture$Stime) > 0)
-			db2 = rbind(db2,data.frame(subjName = db$subjName[i],courseNum = db$courseNum[i],tpe = 0 ))
-		if(length(lab$Stime) > 0)
-			db2 = rbind(db2,data.frame(subjName = db$subjName[i],courseNum = db$courseNum[i],tpe = 1 ))
-		if(length(discussion$Stime) > 0 )
-			db2 = rbind(db2,data.frame(subjName = db$subjName[i],courseNum = db$courseNum[i],tpe = 2 ))
-	}
-	print("db2 generated")
+	} else
+	   classes=class
+
+	
 	#reorder db based on above classes
 	if(!is.null(classes))
-		d  = sortdb(classes,db2)
+		db2  = sortdb(classes,db2)
 	else{
-		db = db[-1,]
+		db2 = db2[-1,]
 		next
 	}
 
@@ -215,21 +232,31 @@ makeSch <- function(class,db,sched = NULL){
 #	schedule = lecture[1,]
 ######
 	#inserts labs and discussions into schedule
-	if(d$tpe[1] == 0)
-		schedule <- filter(classes,isWorthy(Subject,Catalog,d[1,]),(nchar(as.character(Meeting.Days)) > 1))
-	else if(d$tpe[1] == 1)
-		schedule <- filter(classes,isWorthy(Subject,Catalog,d[1,]),(nchar(as.character(Meeting.Days)) == 1),Etime -Stime > 1.5)
+	#print("class")
+	#print(db2[1,])
+	#print("avalible")
+	#print(classes)
+	if(db2$tpe[1] == 0)
+		schedule <- filter(classes,isWorthy(Subject,Catalog,db2[1,]),(nchar(as.character(Meeting.Days)) > 1))
+	else if(db2$tpe[1] == 1)
+		schedule <- filter(classes,isWorthy(Subject,Catalog,db2[1,]),(nchar(as.character(Meeting.Days)) == 1),Etime -Stime > 1.5)
 	else
-		schedule <- filter(classes,isWorthy(Subject,Catalog,d[1,]),(nchar(as.character(Meeting.Days)) == 1),Etime -Stime < 1.5)
-		  
+		schedule <- filter(classes,isWorthy(Subject,Catalog,db2[1,]),(nchar(as.character(Meeting.Days)) == 1),Etime -Stime < 1.5)
+	
+	#print("class")
+	#print(db2[1,])
+	#print("schedule")
+	#print(schedule)
+
 
 
 #####
 
 	sched <- rbind(sched,schedule[1,])
 	sched <- na.omit(sched)
-	db <- db[-1,]
-}
+	db2 <- db2[-1,]
+  }
+
 sched
 }
 
@@ -284,7 +311,6 @@ shinyServer(function(input, output,session) {
 			   dq = parseInput(input$subjCode)	
 			   if(TRUE %in% (ds$Subject == trim(toupper(dq$subjCode)) & ds$Catalog == trim(dq$courseNum) )){
                               classList$db <- rbind(classList$db,dq)
-			      print(classList$db )
                               clas$classes <- filter(ds,isWorthy(Subject,Catalog,classList$db))
                               clas$classes <- convertTime(clas$classes)
 			      classList$db <- sortdb(clas$classes,classList$db)

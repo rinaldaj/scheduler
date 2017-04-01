@@ -14,7 +14,6 @@ shinyUI(fluidPage(
     sidebarPanel(
       HTML('<!-- made by Anthony Rinaldo -->'),
       textInput('subjCode','Class(eg. MA131,CS142,PH141 )',placeholder = 'subject letter'),
-      #numericInput('courseNum','The course number (eg. 131,132...)',value = 0),
       actionButton('addClass','add class'),
       dataTableOutput('classDB'),
       fluidRow(
