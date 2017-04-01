@@ -171,7 +171,7 @@ sortdb <- function(classes,db){
 	#sorts into correct order
 	dv = cbind(clasLeng,db)
 	dv = dv[order(dv$clasLeng),]
-	print(dv)
+	
 	dv$clasLeng <- NULL
 	row.names(dv)<-NULL
 	dv
@@ -202,9 +202,7 @@ makeSch <- function(class,db,sched = NULL){
     if(length(discussion$Stime) > 0 )
       db2 = rbind(db2,data.frame(subjCode = db$subjCode[i],courseNum = db$courseNum[i],tpe = 2,stringsAsFactors = FALSE ))
   }
-  print("the Thing")
-  print(db2)
-  
+
 	while(length(db2$subjCode) > 0){
 	
 	classes = NULL
@@ -225,17 +223,9 @@ makeSch <- function(class,db,sched = NULL){
 		next
 	}
 
-#	lecture = filter(classes,isWorthy(Subject,Catalog,d[1,]),(nchar(as.character(Meeting.Days)) > 1))
-#	lab = filter(classes,isWorthy(Subject,Catalog,d[1,]),(nchar(as.character(Meeting.Days)) == 1))
-#	discussion = filter(lab, Etime -Stime > 1.5)
-#	lab = filter(lab,Etime - Stime < 1.5)
-#	schedule = lecture[1,]
+
 ######
-	#inserts labs and discussions into schedule
-	#print("class")
-	#print(db2[1,])
-	#print("avalible")
-	#print(classes)
+  #checks what type of thing db2 is refering to and inserts it
 	if(db2$tpe[1] == 0)
 		schedule <- filter(classes,isWorthy(Subject,Catalog,db2[1,]),(nchar(as.character(Meeting.Days)) > 1))
 	else if(db2$tpe[1] == 1)
@@ -243,10 +233,7 @@ makeSch <- function(class,db,sched = NULL){
 	else
 		schedule <- filter(classes,isWorthy(Subject,Catalog,db2[1,]),(nchar(as.character(Meeting.Days)) == 1),Etime -Stime < 1.5)
 	
-	#print("class")
-	#print(db2[1,])
-	#print("schedule")
-	#print(schedule)
+
 
 
 
@@ -356,8 +343,8 @@ shinyServer(function(input, output,session) {
 	})
  observeEvent(input$swapClass,{
 	if(!is.null(clas$sch) ){
-		if(!is.null(input$schedule_rows_selected)) {
-			clas$sch <- swapClass(input$schedule_rows_selected,isolate(clas$sch),clas$classes)
+		if(!is.null(input$schedule_rows_selected) && !is.null(input$otherClas_rows_selected)) {
+			clas$sch[input$schedule_rows_selected,] <- clas$ot[input$otherClas_rows_selected,]
 		}
 		else
 			session$sendCustomMessage(type = 'generalErrorMessage', message = list('you need to select a class'))
@@ -369,15 +356,29 @@ shinyServer(function(input, output,session) {
 	
  })
 
- output$show <- reactive({
-	(!is.null(input$schedule_rows_selected)&&!is.null(clas$sch ) )
-})
- observeEvent(input$schedule_rows_selected,{
-	
-}
-)
+ #show alternate class options
+output$otherClas <- renderDataTable({
+  tmp = NULL
+  if(!is.null(input$schedule_rows_selected)) { 
+  sch = isolate(clas$sch)
+  classes = isolate(clas$classes)
+  claIndex = isolate(input$schedule_rows_selected)
+  inClasses = classes[classes$Catalog == sch$Catalog[claIndex] & classes$Subject == sch$Subject[claIndex] & nchar(as.character(classes$Meeting.Days)) == nchar(as.character(sch$Meeting.Days[claIndex])),]
+  inClasses = inClasses[(inClasses$Etime - inClasses$Stime) == (sch$Etime[claIndex] - sch$Stime[claIndex]),]
+  for( i in 1:length(inClasses$Subject)) {
+  
+    if(!conflicts(inClasses[i,],sch))
+      tmp = rbind(tmp,inClasses[i,])
+  }
+  }
+  clas$ot <- tmp
+  tmp[,c("Class.Nbr","Subject","Catalog","Section","Description","Available.Seats","Class.Start.Time","Class.End.Time","Meeting.Days")] 
+},selection = 'single')	
 
- output$schedule <- renderDataTable({clas$sch },selection = 'single')
+
+ output$schedule <- renderDataTable({
+   clas$sch[,c("Class.Nbr","Subject","Catalog","Section","Description","Available.Seats","Class.Start.Time","Class.End.Time","Meeting.Days")] 
+   },selection = 'single')
  observeEvent(input$rmClass,{
 	if(!is.null(input$classDB_rows_selected)){
 	classList$db <- classList$db[-input$classDB_rows_selected,]}
@@ -386,5 +387,36 @@ shinyServer(function(input, output,session) {
         }
 
 })
+ 
+ output$calendar <-renderDataTable({
+   tmp = NULL
+   if(!is.null(clas$sch))
+   {
+     sch = isolate(clas$sch)
+     for(i in 0:((18 - 8)*4)){
+       tmp = rbind(tmp,data.frame(Time = (i * 15) / 60 + 8,Mon = "",Tues = "",Weds = "",Thurs = "",Fri ="",stringsAsFactors = FALSE ))
+     }
+     for(i in 1:length(sch$Subject)){
+       print( strsplit(as.character(sch$Meeting.Days[i])[[1]],NULL))
+       days = strsplit(as.character(sch$Meeting.Days[i]),NULL)[[1]]
+       if( 'M' %in% days)
+       tmp[sch$Etime[i] >= tmp$Time & sch$Stime[i] <= tmp$Time,]$Mon <- paste(sch$Subject[i],sch$Catalog[i],sch$Section[i])
+       
+       if( "T" %in% days)
+         tmp[sch$Etime[i] >= tmp$Time & sch$Stime[i] <= tmp$Time,]$Tues <- paste(sch$Subject[i],sch$Catalog[i],sch$Section[i])
+       
+       if( 'W' %in% days)
+         tmp[sch$Etime[i] >= tmp$Time & sch$Stime[i] <= tmp$Time,]$Weds <- paste(sch$Subject[i],sch$Catalog[i],sch$Section[i])
+       
+       if( 'R' %in% days)
+         tmp[sch$Etime[i] >= tmp$Time & sch$Stime[i] <= tmp$Time,]$Thurs <- paste(sch$Subject[i],sch$Catalog[i],sch$Section[i])
+       
+       if( 'F' %in% days)
+         tmp[sch$Etime[i] >= tmp$Time & sch$Stime[i] <= tmp$Time,]$Fri <- paste(sch$Subject[i],sch$Catalog[i],sch$Section[i])
+     }
+     
+   }
+   tmp
+ },selection = 'single')
   
 })
