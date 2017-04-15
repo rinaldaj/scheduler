@@ -39,7 +39,7 @@ shinyUI(fluidPage(
           actionButton('swapClass','swap class')
         )
       ),
-      tabPanel("Calendar",dataTableOutput('calendar'))
+      tabPanel("Calendar",dataTableOutput('calendar'),numericInput("interval","Interval in Minutes",value = 15))
       )
       
       )

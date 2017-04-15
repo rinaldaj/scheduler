@@ -390,11 +390,15 @@ output$otherClas <- renderDataTable({
  
  output$calendar <-renderDataTable({
    tmp = NULL
-   if(!is.null(clas$sch))
+   
+   if(is.null(input$interval))
+      return(NULL)
+   if(!is.null(clas$sch) && input$interval > 0)
    {
      sch = isolate(clas$sch)
+     interval = isolate(input$interval)
      for(i in 0:((18 - 8)*4)){
-       tmp = rbind(tmp,data.frame(Time = (i * 15) / 60 + 8,Mon = "",Tues = "",Weds = "",Thurs = "",Fri ="",stringsAsFactors = FALSE ))
+       tmp = rbind(tmp,data.frame(Time = (i * interval) / 60 + 8,Mon = "",Tues = "",Weds = "",Thurs = "",Fri ="",stringsAsFactors = FALSE ))
      }
      for(i in 1:length(sch$Subject)){
        print( strsplit(as.character(sch$Meeting.Days[i])[[1]],NULL))
