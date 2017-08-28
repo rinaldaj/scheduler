@@ -391,7 +391,7 @@ output$otherClas <- renderDataTable({
  output$calendar <-renderDataTable({
    tmp = NULL
    
-   if(is.null(input$interval))
+   if(is.null(input$interval) || is.na(input$interval))
       return(NULL)
    if(!is.null(clas$sch) && input$interval > 0)
    {
@@ -422,5 +422,41 @@ output$otherClas <- renderDataTable({
    }
    tmp
  },selection = 'single')
+ 
+ output$schedDown <- downloadHandler(function(){"schedule.csv"},function(file){
+   tmp = NULL
+   
+   if(is.null(input$interval) || is.na(input$interval))
+     return(NULL)
+   if(!is.null(clas$sch) && input$interval > 0)
+   {
+     sch = isolate(clas$sch)
+     interval = isolate(input$interval)
+     for(i in 0:((18 - 8)*4)){
+       tmp = rbind(tmp,data.frame(Time = (i * interval) / 60 + 8,Mon = "",Tues = "",Weds = "",Thurs = "",Fri ="",stringsAsFactors = FALSE ))
+     }
+     for(i in 1:length(sch$Subject)){
+       print( strsplit(as.character(sch$Meeting.Days[i])[[1]],NULL))
+       days = strsplit(as.character(sch$Meeting.Days[i]),NULL)[[1]]
+       if( 'M' %in% days)
+         tmp[sch$Etime[i] >= tmp$Time & sch$Stime[i] <= tmp$Time,]$Mon <- paste(sch$Subject[i],sch$Catalog[i],sch$Section[i])
+       
+       if( "T" %in% days)
+         tmp[sch$Etime[i] >= tmp$Time & sch$Stime[i] <= tmp$Time,]$Tues <- paste(sch$Subject[i],sch$Catalog[i],sch$Section[i])
+       
+       if( 'W' %in% days)
+         tmp[sch$Etime[i] >= tmp$Time & sch$Stime[i] <= tmp$Time,]$Weds <- paste(sch$Subject[i],sch$Catalog[i],sch$Section[i])
+       
+       if( 'R' %in% days)
+         tmp[sch$Etime[i] >= tmp$Time & sch$Stime[i] <= tmp$Time,]$Thurs <- paste(sch$Subject[i],sch$Catalog[i],sch$Section[i])
+       
+       if( 'F' %in% days)
+         tmp[sch$Etime[i] >= tmp$Time & sch$Stime[i] <= tmp$Time,]$Fri <- paste(sch$Subject[i],sch$Catalog[i],sch$Section[i])
+     }
+     
+   }
+   tmp
+   write.csv(file = file,tmp)
+ })
   
 })
