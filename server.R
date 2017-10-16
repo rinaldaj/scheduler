@@ -61,7 +61,15 @@ conflicts <- function(cla,sch){
   if(is.null(sch))
 	return(FALSE)
   for(i in 1:length(sch$Stime)){
-    if(TRUE %in% (strsplit(as.character(cla$Meeting.Days[1]),NULL)[[1]] %in% strsplit(as.character(sch$Meeting.Days[i]),NULL)[[1]]))
+    #tmp = mapply(function(x,y){x == y}, x = strsplit(as.character(cla$Meeting.Days[1]),NULL), y = strsplit(as.character(sch$Meeting.Days[i]),NULL))
+    #sameDay = FALSE
+    #tmp = 0
+    #for (j in strsplit(as.character(sch$Meeting.Days[i]),NULL) ){
+     # print(j)
+      #tmp = tmp + 1
+    #  print(tmp)
+    #}
+    if(TRUE %in% (strsplit(as.character(cla$Meeting.Days[1]),NULL)[[1]] %in% strsplit(as.character(sch$Meeting.Days[i]),NULL)))
     {
       if((cla$Etime[1] >= sch$Stime[i] && cla$Stime[1] <= sch$Stime[i])
 	||(cla$Stime[1] <= sch$Etime[i] && cla$Stime[1] >= sch$Stime[i])
@@ -289,7 +297,7 @@ shinyServer(function(input, output,session) {
   ds = data.frame(read.csv('ps.csv'),stringsAsFactors = FALSE)
   ds = trim(ds)
   #ds = filter(ds,Available.Seats > 0,Meeting.Days != '')
-   ds = filter(ds,Meeting.Days != '')
+   ds = filter(ds,Meeting.Days != '',!is.na(Class.End.Time),!is.na(Class.Start.Time))
 
   classList <- reactiveValues()
   clas <- reactiveValues()
