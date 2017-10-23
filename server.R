@@ -69,7 +69,7 @@ conflicts <- function(cla,sch){
       #tmp = tmp + 1
     #  print(tmp)
     #}
-    if(TRUE %in% (strsplit(as.character(cla$Meeting.Days[1]),NULL)[[1]] %in% strsplit(as.character(sch$Meeting.Days[i]),NULL)))
+    if(TRUE %in% (strsplit(as.character(cla$Meeting.Days[1]),NULL)[[1]] %in% strsplit(as.character(sch$Meeting.Days[i]),NULL)[[1]]))
     {
       if((cla$Etime[1] >= sch$Stime[i] && cla$Stime[1] <= sch$Stime[i])
 	||(cla$Stime[1] <= sch$Etime[i] && cla$Stime[1] >= sch$Stime[i])
@@ -334,7 +334,7 @@ shinyServer(function(input, output,session) {
 	a = makeSch(clas$classes,classList$db)
 	missing = getMissing(a,classList$db,clas$classes)
 	if(!is.null(missing)){
-		 session$sendCustomMessage(type = 'generalErrorMessage',message = list(c('classes are missing',paste(missing$subjCode,missing$courseNum ))))
+		 session$sendCustomMessage(type = 'generalErrorMessage',message = list(c('classes could not be added',paste(missing$subjCode,missing$courseNum ))))
 	}
 	return(a)
    }
