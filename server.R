@@ -373,6 +373,7 @@ output$otherClas <- renderDataTable({
   claIndex = isolate(input$schedule_rows_selected)
   inClasses = classes[classes$Catalog == sch$Catalog[claIndex] & classes$Subject == sch$Subject[claIndex] & nchar(as.character(classes$Meeting.Days)) == nchar(as.character(sch$Meeting.Days[claIndex])),]
   inClasses = inClasses[(inClasses$Etime - inClasses$Stime) == (sch$Etime[claIndex] - sch$Stime[claIndex]),]
+  inClasses = filter(inClasses,Section != sch$Section[claIndex])
   for( i in 1:length(inClasses$Subject)) {
   
     if(!conflicts(inClasses[i,],sch))
