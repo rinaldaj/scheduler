@@ -427,7 +427,12 @@ output$otherClas <- renderDataTable({
        if( 'F' %in% days)
          tmp[sch$Etime[i] >= tmp$Time & sch$Stime[i] <= tmp$Time,]$Fri <- paste(sch$Subject[i],sch$Catalog[i],sch$Section[i])
      }
-     
+     tmp$Time = sapply(tmp$Time,function(x){
+       minutes = x %% 1
+       minutes = minutes * 60
+       hours = floor(x)
+       return(paste(toString(hours),sprintf("%02d",minutes),sep = ":"))
+     })
    }
    tmp
  },selection = 'single')
