@@ -386,7 +386,7 @@ output$otherClas <- renderDataTable({
 
 
  output$schedule <- renderDataTable({
-   clas$sch[,c("Class.Nbr","Subject","Catalog","Section","Description","Available.Seats","Class.Start.Time","Class.End.Time","Meeting.Days")] 
+   clas$sch[,c("Class.Nbr","Subject","Catalog","Section","Description","Available.Seats","Class.Start.Time","Class.End.Time","Meeting.Days","Instructor")] 
    },selection = 'single')
  observeEvent(input$rmClass,{
 	if(!is.null(input$classDB_rows_selected)){
